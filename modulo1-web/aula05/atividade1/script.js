@@ -1,69 +1,43 @@
-const usernameInput = document.getElementById("username");
-const searchButton = document.getElementById("searchButton");
+const botao = document.getElementById("buscar");
+const resultado = document.getElementById("resultado");
 
-const profile = document.getElementById("profile");
-const message = document.getElementById("message");
+botao.addEventListener("click", async () => {
 
-const avatar = document.getElementById("avatar");
-const name = document.getElementById("name");
-const login = document.getElementById("login");
-const bio = document.getElementById("bio");
+    const cep = document.getElementById("cep").value.replace(/\D/g, "");
 
-const followers = document.getElementById("followers");
-const following = document.getElementById("following");
-const repositories = document.getElementById("repositories");
-
-const githubLink = document.getElementById("githubLink");
-
-async function searchUser() {
-    const username = usernameInput.value.trim();
-
-    if (username === "") {
-        message.textContent = "Digite um nome de usuário.";
-        profile.classList.add("hidden");
+    if (cep.length !== 8) {
+        resultado.innerHTML = "❌ CEP inválido. Digite um CEP com 8 números.";
         return;
     }
 
-    message.textContent = "Buscando usuário...";
-    profile.classList.add("hidden");
+    resultado.innerHTML = "🔎 Consultando CEP...";
 
     try {
-        const response = await fetch(
-            `https://api.github.com/users/${username}`
+
+        const resposta = await fetch(
+            `https://viacep.com.br/ws/${cep}/json/`
         );
 
-        if (!response.ok) {
-            throw new Error("Usuário não encontrado.");
+        const dados = await resposta.json();
+
+        if (dados.erro) {
+            resultado.innerHTML = "❌ CEP não encontrado ou não localizado.";
+            return;
         }
 
-        const data = await response.json();
+        resultado.innerHTML = `
+            <h2>📍 Endereço encontrado</h2>
 
-        avatar.src = data.avatar_url;
-        avatar.alt = `Foto de ${data.login}`;
+            <p><strong>Logradouro:</strong> ${dados.logradouro}</p>
+            <p><strong>Bairro:</strong> ${dados.bairro}</p>
+            <p><strong>Cidade:</strong> ${dados.localidade}</p>
+            <p><strong>UF:</strong> ${dados.uf}</p>
+        `;
 
-        name.textContent = data.name || "Nome não informado";
-        login.textContent = `@${data.login}`;
-        bio.textContent = data.bio || "Este usuário não possui biografia.";
+    } catch (erro) {
 
-        followers.textContent = data.followers;
-        following.textContent = data.following;
-        repositories.textContent = data.public_repos;
+        resultado.innerHTML =
+            "⚠️ Não foi possível realizar a consulta. Tente novamente.";
 
-        githubLink.href = data.html_url;
-
-        message.textContent = "";
-        profile.classList.remove("hidden");
-
-    } catch (error) {
-        message.textContent = error.message;
-        profile.classList.add("hidden");
-    }
-}
-
-searchButton.addEventListener("click", searchUser);
-
-usernameInput.addEventListener("keypress", function(event) {
-    if (event.key === "Enter") {
-        searchUser();
     }
 });
